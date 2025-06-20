@@ -20,7 +20,6 @@ import { Icons } from "../../components";
 import cn from "classnames";
 
 const RecipeEdit = ({ onItemDelete }) => {
-  const { value, handleChange, setValue } = useTags();
   const [recipeName, setRecipeName] = useState("");
 
   const [ingredientValue, setIngredientValue] = useState({
@@ -82,9 +81,6 @@ const RecipeEdit = ({ onItemDelete }) => {
   const { id } = useParams();
   useEffect(
     (_) => {
-      if (!loading) {
-        return;
-      }
       api
         .getRecipe({
           recipe_id: id,
@@ -103,7 +99,6 @@ const RecipeEdit = ({ onItemDelete }) => {
           history.push("/recipes");
         });
     },
-    [value]
   );
 
   const handleIngredientAutofill = ({ id, name, measurement_unit }) => {

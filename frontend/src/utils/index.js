@@ -11,6 +11,5 @@ export {
   useFormWithValidation,
   useRecipes,
   useRecipe,
-  useTags,
   useSubscriptions
 }
