@@ -16,8 +16,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
         return {
             "id": recipe.id,
             "name": recipe.name,
-            "image": request.build_absolute_uri(recipe.image.url)
-            if request else recipe.image.url,
+            "image": (
+                request.build_absolute_uri(recipe.image.url)
+                if request
+                else recipe.image.url
+            ),
             "cooking_time": recipe.cooking_time,
         }
 
@@ -33,7 +36,10 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         return {
             "id": recipe.id,
             "name": recipe.name,
-            "image": request.build_absolute_uri(recipe.image.url)
-            if request else recipe.image.url,
+            "image": (
+                request.build_absolute_uri(recipe.image.url)
+                if request
+                else recipe.image.url
+            ),
             "cooking_time": recipe.cooking_time,
         }

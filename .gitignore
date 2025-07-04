@@ -1,6 +1,9 @@
 frontend/node_modules
 infra/frontend/build
 .env
+users
+*.toml
+.ruff_cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

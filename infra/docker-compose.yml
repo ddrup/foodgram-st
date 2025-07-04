@@ -3,10 +3,11 @@ services:
     image: postgres:14
     container_name: foodgram-db
     restart: always
+    env_file: .env
     environment:
-      POSTGRES_USER: your_username
-      POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: your_database
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: foodgram-db
     ports:
       - "9002:5432"
     volumes:
@@ -21,15 +22,14 @@ services:
     environment:
       - DEBUG=1
       - DJANGO_ALLOWED_HOSTS=localhost
-      - POSTGRES_DB=your_database
-      - POSTGRES_USER=your_username
-      - POSTGRES_PASSWORD=your_password
+      - POSTGRES_DB=foodgram-db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
       - DB_HOST=db
       - DB_PORT=5432
-    env_file: .env
     volumes:
       - ../backend:/app
-      - ../data:/app/data
+      - static:/app/staticfiles
     ports:
       - "8000:8000"
     command: >
@@ -55,8 +55,10 @@ services:
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
       - ../backend/media:/app/media
+      - static:/staticfiles/
     depends_on:
       - backend
 
 volumes:
   postgres_data:
+  static:

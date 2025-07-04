@@ -1,31 +1,40 @@
-# Стандартная библиотека
-from pathlib import Path
 import os
+from pathlib import Path
 
-# Сторонние библиотеки
-from dotenv import load_dotenv
-from django.core.management.utils import get_random_secret_key
-
-load_dotenv()
-
+from dotenv import load_dotenv  # для считывания из .env файла
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_URL = "http://localhost"
 
-SECRET_KEY = os.getenv("SECRET_KEY", get_random_secret_key())
+# # SECURITY WARNING: keep the secret key used in production secret!
+# SECRET_KEY = "django-insecure-cwfp^3hg-^*5hp=kq^^rj72manch$!wdqdi3r*9q7#*52+dn$7"
 
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+# # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = True
 
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS", "localhost,127.0.0.1"
-).split(",")
+# ALLOWED_HOSTS = []
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = "/app/media"
+MEDIA_ROOT = BASE_DIR / "media"
+# ───── ключ и режим отладки ─────
+SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
+DEBUG = os.getenv("DEBUG", "0") in ("1", "true", "True")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
-AUTH_USER_MODEL = "users.User"
+# ───── PostgreSQL ─────
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("DB_HOST", "db"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+    }
+}
+
+# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -34,32 +43,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_filters",
-    # REST Framework + токены
     "rest_framework",
     "rest_framework.authtoken",
-    # Проектные приложения
+    "django_filters",
     "users",
     "recipes",
+    "api",
 ]
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.TokenAuthentication",
-    ),
-    "DEFAULT_PAGINATION_CLASS": (
-        "rest_framework.pagination.LimitOffsetPagination"
-    ),
-    "PAGE_SIZE": int(os.getenv("PAGE_SIZE", 6)),
-    "DEFAULT_FILTER_BACKENDS": (
-        "django_filters.rest_framework.DjangoFilterBackend",
-    ),
-    "DEFAULT_PARSER_CLASSES": [
-        "rest_framework.parsers.JSONParser",
-        "rest_framework.parsers.FormParser",
-        "rest_framework.parsers.MultiPartParser",
-    ],
-}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -91,70 +81,57 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "your_database"),
-        "USER": os.getenv("POSTGRES_USER", "your_username"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "your_password"),
-        "HOST": os.getenv("DB_HOST", "db"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-    }
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": int(os.getenv("PAGE_SIZE", 6)),
 }
+
+# Password validation
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "UserAttributeSimilarityValidator"
-        )
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "MinimumLengthValidator"
-        )
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "CommonPasswordValidator"
-        )
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        "NAME": (
-            "django.contrib.auth.password_validation."
-            "NumericPasswordValidator"
-        )
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "DEBUG",
-    },
-}
 
-# Русификация проекта
-LANGUAGE_CODE = "ru"
+# Internationalization
+# https://docs.djangoproject.com/en/4.2/topics/i18n/
+AUTH_USER_MODEL = "users.User"
 
-# Часовой пояс (Московское время)
-TIME_ZONE = "Europe/Moscow"
+LANGUAGE_CODE = "en-us"
+
+TIME_ZONE = "UTC"
 
 USE_I18N = True
-USE_L10N = True
+
 USE_TZ = True
 
-# Пути для статики
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATIC_URL = "/static/"
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+

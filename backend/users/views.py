@@ -1,29 +1,36 @@
+import base64
+
 # Стандартные библиотеки
 import logging
-import base64
 import uuid
+
+from django.contrib.auth.hashers import check_password
 
 # Сторонние библиотеки
 from django.core.files.base import ContentFile
-from django.contrib.auth.hashers import check_password
 from django.db.models import Count
+from django.shortcuts import render
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Наши (локальные) импорты
 from recipes.models import Recipe
-from .models import User, Subscription
-from .serializers import (
-    UserSerializer,
-    UserCreateSerializer,
-    EmailAuthTokenSerializer,
-)
+
+from .models import Subscription, User
 from .paginations import UserPagination
+from .serializers import (
+    EmailAuthTokenSerializer,
+    UserCreateSerializer,
+    UserSerializer,
+)
+
+# Create your views here.
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,34 +40,31 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     pagination_class = UserPagination
 
+    def get_permissions(self):
+        if self.action == "create":
+            return [AllowAny()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == "create":
             return UserCreateSerializer
         return UserSerializer
 
-    @action(
-        detail=False, methods=["get"],
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         from http import HTTPStatus
+
         return Response(serializer.data, status=HTTPStatus.OK)
 
-    @action(
-        detail=False, methods=["post"],
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
     def set_password(self, request):
         user = request.user
         old_password = request.data.get("current_password")
         new_password = request.data.get("new_password")
         if not old_password or not new_password:
             return Response(
-                {
-                    "error": "Поля 'current_password' "
-                             "и 'new_password' обязательны."
-                },
+                {"error": "Поля 'current_password' " "и 'new_password' обязательны."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not check_password(old_password, user.password):
@@ -78,8 +82,10 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        detail=False, methods=["put", "delete"], url_path="me/avatar",
-        permission_classes=[IsAuthenticated]
+        detail=False,
+        methods=["put", "delete"],
+        url_path="me/avatar",
+        permission_classes=[IsAuthenticated],
     )
     def update_avatar(self, request):
         if request.method == "PUT":
@@ -97,8 +103,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     file_name, ContentFile(base64.b64decode(imgstr)), save=True
                 )
                 return Response(
-                    {"avatar": request.build_absolute_uri(
-                        request.user.avatar.url)},
+                    {"avatar": request.build_absolute_uri(request.user.avatar.url)},
                     status=status.HTTP_200_OK,
                 )
             except Exception as exc:
@@ -118,8 +123,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        detail=True, methods=["post", "delete"],
-        permission_classes=[IsAuthenticated]
+        detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, pk=None):
         from http import HTTPStatus
@@ -128,9 +132,7 @@ class UserViewSet(viewsets.ModelViewSet):
         author = self.get_object()
 
         if request.method == "DELETE":
-            subscription = Subscription.objects.filter(
-                user=user, author=author
-            )
+            subscription = Subscription.objects.filter(user=user, author=author)
             if not subscription.exists():
                 return Response(
                     {"error": "Вы не подписаны на этого пользователя."},
@@ -160,9 +162,7 @@ class UserViewSet(viewsets.ModelViewSet):
             recipes_limit = None
 
         author_data = UserSerializer(author, context={"request": request}).data
-        author_data["recipes_count"] = Recipe.objects.filter(
-            author=author
-        ).count()
+        author_data["recipes_count"] = Recipe.objects.filter(author=author).count()
         qs = Recipe.objects.filter(author=author)
         if recipes_limit:
             qs = qs[:recipes_limit]
@@ -170,8 +170,9 @@ class UserViewSet(viewsets.ModelViewSet):
             {
                 "id": r.id,
                 "name": r.name,
-                "image": request.build_absolute_uri(r.image.url)
-                if request else r.image.url,
+                "image": (
+                    request.build_absolute_uri(r.image.url) if request else r.image.url
+                ),
                 "cooking_time": r.cooking_time,
             }
             for r in qs
@@ -185,15 +186,12 @@ class UserViewSet(viewsets.ModelViewSet):
         Subscription.objects.filter(user=user, author=author).delete()
         return Response({"status": "unsubscribed"})
 
-    @action(
-        detail=False, methods=["get"],
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         user = request.user
-        subscriptions = User.objects.filter(
-            subscribers__user=user
-        ).annotate(recipes_count=Count("recipes"))
+        subscriptions = User.objects.filter(subscribers__user=user).annotate(
+            recipes_count=Count("recipes")
+        )
 
         paginator = UserPagination()
         page = paginator.paginate_queryset(subscriptions, request)
@@ -205,9 +203,7 @@ class UserViewSet(viewsets.ModelViewSet):
             recipes_limit = None
 
         for author in page:
-            author_data = UserSerializer(
-                author, context={"request": request}
-            ).data
+            author_data = UserSerializer(author, context={"request": request}).data
             author_data["recipes_count"] = author.recipes_count
             qs = Recipe.objects.filter(author=author)
             if recipes_limit:
@@ -216,8 +212,11 @@ class UserViewSet(viewsets.ModelViewSet):
                 {
                     "id": r.id,
                     "name": r.name,
-                    "image": request.build_absolute_uri(r.image.url)
-                    if request else r.image.url,
+                    "image": (
+                        request.build_absolute_uri(r.image.url)
+                        if request
+                        else r.image.url
+                    ),
                     "cooking_time": r.cooking_time,
                 }
                 for r in qs
@@ -244,8 +243,7 @@ class LogoutView(APIView):
         except Exception as exc:
             logger.error(f"Ошибка при выходе: {exc}")
             return Response(
-                {"detail": str(exc)},
-                status=HTTPStatus.INTERNAL_SERVER_ERROR
+                {"detail": str(exc)}, status=HTTPStatus.INTERNAL_SERVER_ERROR
             )
 
 
@@ -253,13 +251,10 @@ class AuthTokenView(ObtainAuthToken):
     serializer_class = EmailAuthTokenSerializer
 
     def post(self, request, *args, **kwargs):
-        from http import HTTPStatus
-
         serializer = self.serializer_class(
-            data=request.data,
-            context={"request": request}
+            data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        token, _ = Token.objects.get_or_create(user=user)
-        return Response({"auth_token": token.key}, status=HTTPStatus.OK)
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({"auth_token": token.key})

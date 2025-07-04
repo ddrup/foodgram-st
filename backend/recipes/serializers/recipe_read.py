@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 # Наши (локальные) импорты
 from users.serializers import UserSerializer
+
 from ..fields import Base64ImageField
 from ..models import Recipe
 
@@ -17,8 +18,16 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = [
-            "id", "author", "name", "image", "text", "cooking_time",
-            "is_favorited", "is_in_shopping_cart", "ingredients",
+            "id",
+            "author",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
+            "is_favorited",
+            "is_in_shopping_cart",
+            "ingredients",
+            "created_at",
         ]
 
     def get_is_favorited(self, obj):
@@ -38,10 +47,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         )
 
     def get_ingredients(self, obj):
-        recipeingredients = (
-            obj.recipeingredient_set
-               .select_related("ingredient")
-        )
+        recipeingredients = obj.recipeingredient_set.select_related("ingredient")
         return [
             {
                 "id": ri.ingredient.id,

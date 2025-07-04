@@ -33,5 +33,4 @@ urllib3==1.26.20
 psycopg2-binary
 gunicorn
 python-dotenv
-drf-extra-fields>=3.4.0
-
+drf-extra-fields>=3.4.0 

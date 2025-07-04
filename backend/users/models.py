@@ -1,4 +1,3 @@
-# Сторонние библиотеки
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import UniqueConstraint
@@ -57,8 +56,7 @@ class Subscription(models.Model):
         ordering = ["user"]
         constraints = [
             UniqueConstraint(
-                fields=["user", "author"],
-                name="unique_user_author_subscribe"
+                fields=["user", "author"], name="unique_user_author_subscribe"
             )
         ]
 

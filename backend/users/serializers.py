@@ -1,16 +1,18 @@
 import re
+
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from .models import User, Subscription
-from .fields import Base64ImageField
 from constants import (
-    MAX_LENGTH_USERNAME,
+    ERROR_MESSAGES,
     MAX_LENGTH_FIRSTNAME,
     MAX_LENGTH_LASTNAME,
-    ERROR_MESSAGES
+    MAX_LENGTH_USERNAME,
 )
+
+from .fields import Base64ImageField
+from .models import Subscription, User
 
 
 class EmailAuthTokenSerializer(serializers.Serializer):
@@ -110,10 +112,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_username(self, value):
-        pattern = r'^[\w.@+-]+$'
+        pattern = r"^[\w.@+-]+$"
         if not re.match(pattern, value):
             raise ValidationError("Неверный формат username.")
-        if value.lower() == 'me':
+        if value.lower() == "me":
             raise ValidationError("Использовать 'me' как username запрещено.")
         if User.objects.filter(username__iexact=value).exists():
             raise ValidationError("Такой username уже зарегистрирован.")

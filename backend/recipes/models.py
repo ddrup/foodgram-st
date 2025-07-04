@@ -1,9 +1,10 @@
-# Сторонние библиотеки
+# local
 from django.contrib.auth import get_user_model
+
+# common library
 from django.core.validators import MinValueValidator
 from django.db import models
 
-# Локальные импорты
 from constants import NAME_MAX_LENGTH, UNIT_MAX_LENGTH
 
 User = get_user_model()
@@ -25,8 +26,7 @@ class Ingredient(models.Model):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "measurement_unit"],
-                name="unique_ingredient_name_unit"
+                fields=["name", "measurement_unit"], name="unique_ingredient_name_unit"
             )
         ]
 
@@ -59,11 +59,15 @@ class Recipe(models.Model):
         verbose_name="Время приготовления (мин)",
         validators=[MinValueValidator(1)],
     )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
+    )
 
     class Meta:
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
-        ordering = ["name"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.name
@@ -91,8 +95,7 @@ class RecipeIngredient(models.Model):
         ordering = ["recipe", "ingredient"]
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "ingredient"],
-                name="unique_recipe_ingredient"
+                fields=["recipe", "ingredient"], name="unique_recipe_ingredient"
             )
         ]
 
@@ -117,8 +120,7 @@ class UserRecipeRelation(models.Model):
         ordering = ["user"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_recipe"
+                fields=["user", "recipe"], name="unique_user_recipe"
             )
         ]
 
@@ -133,8 +135,7 @@ class Favorite(UserRecipeRelation):
         ordering = ["user"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_recipe_in_favorite"
+                fields=["user", "recipe"], name="unique_user_recipe_in_favorite"
             )
         ]
 
@@ -146,7 +147,6 @@ class ShoppingCart(UserRecipeRelation):
         ordering = ["user"]
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_recipe_in_shopping_cart"
+                fields=["user", "recipe"], name="unique_user_recipe_in_shopping_cart"
             )
         ]
