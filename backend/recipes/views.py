@@ -1,18 +1,15 @@
 # local
 from http import HTTPStatus
-
 # Standart library
 from io import BytesIO
 
 from django.conf import settings
-
 # thirdy party
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django_filters.rest_framework import DjangoFilterBackend
-
 # thirdy party
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -23,7 +20,8 @@ from .filters import IngredientFilter
 from .models import Favorite, Ingredient, Recipe, ShoppingCart
 from .paginations import RecipePagination
 from .serializers.ingredient import IngredientSerializer
-from .serializers.other_serializers import FavoriteSerializer, ShoppingCartSerializer
+from .serializers.other_serializers import (FavoriteSerializer,
+                                            ShoppingCartSerializer)
 from .serializers.recipe_read import RecipeReadSerializer
 from .serializers.recipe_write import RecipeWriteSerializer
 

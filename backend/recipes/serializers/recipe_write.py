@@ -1,10 +1,12 @@
+from constants import MIN_COOKING_TIME as _MIN_TIME
 from django.db import transaction as _transaction
 from rest_framework import serializers as _serializers
 from rest_framework.exceptions import ValidationError as _ValErr
 
-from constants import MIN_COOKING_TIME as _MIN_TIME
 from ..fields import Base64ImageField as _ImgField
-from ..models import Ingredient as _Ingredient, Recipe as _Recipe, RecipeIngredient as _RecIng
+from ..models import Ingredient as _Ingredient
+from ..models import Recipe as _Recipe
+from ..models import RecipeIngredient as _RecIng
 
 
 class IngredientInRecipeSerializer(_serializers.Serializer):
@@ -12,6 +14,7 @@ class IngredientInRecipeSerializer(_serializers.Serializer):
     Вложенный сериализатор для ингредиента в рецепте:
     принимает id и amount.
     """
+
     id = _serializers.IntegerField()
     amount = _serializers.IntegerField(min_value=1)
 
@@ -21,6 +24,7 @@ class RecipeWriteSerializer(_serializers.ModelSerializer):
     Сериализатор записи рецепта:
     обрабатывает изображение в Base64, поля ингредиентов и валидацию.
     """
+
     image = _ImgField()
     ingredients = IngredientInRecipeSerializer(many=True)
 
@@ -59,7 +63,9 @@ class RecipeWriteSerializer(_serializers.ModelSerializer):
             if not _Ingredient.objects.filter(id=idx).exists():
                 raise _ValErr({"ingredients": f"Ингредиент с id {idx} не существует."})
             if idx in seen_ids:
-                raise _ValErr({"ingredients": f"Ингредиент с id {idx} указан несколько раз."})
+                raise _ValErr(
+                    {"ingredients": f"Ингредиент с id {idx} указан несколько раз."}
+                )
             seen_ids.add(idx)
         return items
 
@@ -71,7 +77,9 @@ class RecipeWriteSerializer(_serializers.ModelSerializer):
         if req and req.method in ("PUT", "PATCH"):
             raw = self.initial_data.get("ingredients", None)
             if raw is not None and not raw:
-                raise _ValErr({"ingredients": "Поле 'ingredients' обязательно при обновлении."})
+                raise _ValErr(
+                    {"ingredients": "Поле 'ingredients' обязательно при обновлении."}
+                )
         return attrs
 
     @_transaction.atomic
@@ -81,8 +89,7 @@ class RecipeWriteSerializer(_serializers.ModelSerializer):
         """
         ing_list = validated_data.pop("ingredients")
         recipe = _Recipe.objects.create(
-            author=self.context["request"].user,
-            **validated_data
+            author=self.context["request"].user, **validated_data
         )
         self._save_ings(recipe, ing_list)
         return recipe
@@ -119,4 +126,5 @@ class RecipeWriteSerializer(_serializers.ModelSerializer):
         Возвращает данные через RecipeReadSerializer после записи.
         """
         from .recipe_read import RecipeReadSerializer
+
         return RecipeReadSerializer(instance, context=self.context).data

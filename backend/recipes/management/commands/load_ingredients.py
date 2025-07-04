@@ -3,7 +3,6 @@ import json
 
 # Сторонние библиотеки
 from django.core.management.base import BaseCommand
-
 # Локальные импорты
 from recipes.models import Ingredient
 

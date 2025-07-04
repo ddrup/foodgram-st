@@ -1,7 +1,6 @@
 import base64 as _b64
 import logging as _logging
 import uuid as _uuid
-
 from http import HTTPStatus as _HTTPStatus
 
 # Django utilities
@@ -9,25 +8,25 @@ from django.contrib.auth.hashers import check_password as _check_password
 from django.core.files.base import ContentFile as _ContentFile
 from django.db.models import Count as _Count
 from django.shortcuts import get_object_or_404 as _gof
-
+# Local imports
+from recipes.models import Recipe as _Recipe
 # DRF components
-from rest_framework import status as _status, viewsets as _viewsets
+from rest_framework import status as _status
+from rest_framework import viewsets as _viewsets
 from rest_framework.authtoken.models import Token as _Token
 from rest_framework.authtoken.views import ObtainAuthToken as _ObtainAuth
 from rest_framework.decorators import action as _action
-from rest_framework.permissions import AllowAny as _AllowAny, IsAuthenticated as _IsAuth
+from rest_framework.permissions import AllowAny as _AllowAny
+from rest_framework.permissions import IsAuthenticated as _IsAuth
 from rest_framework.response import Response as _Resp
 from rest_framework.views import APIView as _APIView
 
-# Local imports
-from recipes.models import Recipe as _Recipe
-from .models import Subscription as _Sub, User as _User
+from .models import Subscription as _Sub
+from .models import User as _User
 from .paginations import UserPagination as _UserPage
-from .serializers import (
-    EmailAuthTokenSerializer as _EmailAuthSer,
-    UserCreateSerializer as _UserCreateSer,
-    UserSerializer as _UserSer,
-)
+from .serializers import EmailAuthTokenSerializer as _EmailAuthSer
+from .serializers import UserCreateSerializer as _UserCreateSer
+from .serializers import UserSerializer as _UserSer
 
 # Logger for error tracking
 _logger = _logging.getLogger(__name__)

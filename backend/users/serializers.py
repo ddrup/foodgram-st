@@ -1,18 +1,17 @@
 import re as _re
 
+from constants import ERROR_MESSAGES as _ERR
+from constants import MAX_LENGTH_FIRSTNAME as _MAX_FN
+from constants import MAX_LENGTH_LASTNAME as _MAX_LN
+from constants import MAX_LENGTH_USERNAME as _MAX_UN
 from django.contrib.auth import authenticate as _authenticate
 from rest_framework import serializers as _serializers
 from rest_framework.exceptions import ValidationError as _ValErr
 
 from .fields import Base64ImageField as _B64Field
-from .models import Subscription as _SubModel, User as _UserModel
+from .models import Subscription as _SubModel
+from .models import User as _UserModel
 
-from constants import (
-    ERROR_MESSAGES as _ERR,
-    MAX_LENGTH_FIRSTNAME as _MAX_FN,
-    MAX_LENGTH_LASTNAME as _MAX_LN,
-    MAX_LENGTH_USERNAME as _MAX_UN,
-)
 
 class EmailAuthTokenSerializer(_serializers.Serializer):
     """

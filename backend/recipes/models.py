@@ -1,12 +1,12 @@
 # recipes/models.py
 
 # Стандартные средства Django и валидация
+# Общие константы проекта
+from constants import NAME_MAX_LENGTH as _NAME_MAX
+from constants import UNIT_MAX_LENGTH as _UNIT_MAX
+from django.contrib.auth import get_user_model as _get_user
 from django.core.validators import MinValueValidator as _MinVal
 from django.db import models as _models
-from django.contrib.auth import get_user_model as _get_user
-
-# Общие константы проекта
-from constants import NAME_MAX_LENGTH as _NAME_MAX, UNIT_MAX_LENGTH as _UNIT_MAX
 
 # Получаем модель пользователя
 User = _get_user()
@@ -17,6 +17,7 @@ class Ingredient(_models.Model):
     Модель ингредиента:
     имя и единица измерения с ограничениями длины.
     """
+
     name = _models.CharField(
         max_length=_NAME_MAX,
         verbose_name="Название",
@@ -33,13 +34,13 @@ class Ingredient(_models.Model):
         - сортировка по имени;
         - человекочитаемые имена.
         """
+
         verbose_name = "Ингредиент"
         verbose_name_plural = "Ингредиенты"
         ordering = ["name"]
         constraints = [
             _models.UniqueConstraint(
-                fields=["name", "measurement_unit"],
-                name="unique_ingredient_name_unit"
+                fields=["name", "measurement_unit"], name="unique_ingredient_name_unit"
             )
         ]
 
@@ -52,6 +53,7 @@ class Recipe(_models.Model):
     Основная модель рецепта:
     автор, название, изображение, текст, время приготовления и связь с ингредиентами.
     """
+
     author = _models.ForeignKey(
         User,
         on_delete=_models.CASCADE,
@@ -89,6 +91,7 @@ class Recipe(_models.Model):
         - сортировка по дате создания (по убыванию);
         - человекочитаемые имена.
         """
+
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
         ordering = ["-created_at"]
@@ -102,6 +105,7 @@ class RecipeIngredient(_models.Model):
     Промежуточная модель рецепта и ингредиента:
     хранит количество ингредиента в рецепте.
     """
+
     recipe = _models.ForeignKey(
         Recipe,
         on_delete=_models.CASCADE,
@@ -124,13 +128,13 @@ class RecipeIngredient(_models.Model):
         - сортировка по recipe и ingredient;
         - человекочитаемые имена.
         """
+
         verbose_name = "Ингредиент рецепта"
         verbose_name_plural = "Ингредиенты рецепта"
         ordering = ["recipe", "ingredient"]
         constraints = [
             _models.UniqueConstraint(
-                fields=["recipe", "ingredient"],
-                name="unique_recipe_ingredient"
+                fields=["recipe", "ingredient"], name="unique_recipe_ingredient"
             )
         ]
 
@@ -143,6 +147,7 @@ class UserRecipeRelation(_models.Model):
     Абстрактная модель связи пользователь-рецепт:
     используется как базовый класс для Favorite и ShoppingCart.
     """
+
     user = _models.ForeignKey(
         User,
         on_delete=_models.CASCADE,
@@ -159,8 +164,7 @@ class UserRecipeRelation(_models.Model):
         ordering = ["user"]
         constraints = [
             _models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_recipe"
+                fields=["user", "recipe"], name="unique_user_recipe"
             )
         ]
 
@@ -172,14 +176,14 @@ class Favorite(UserRecipeRelation):
     """
     Модель избранного, унаследована от UserRecipeRelation.
     """
+
     class Meta(UserRecipeRelation.Meta):
         verbose_name = "Избранное"
         verbose_name_plural = "Избранное"
         ordering = ["user"]
         constraints = [
             _models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_recipe_in_favorite"
+                fields=["user", "recipe"], name="unique_user_recipe_in_favorite"
             )
         ]
 
@@ -188,13 +192,13 @@ class ShoppingCart(UserRecipeRelation):
     """
     Модель корзины покупок, унаследована от UserRecipeRelation.
     """
+
     class Meta(UserRecipeRelation.Meta):
         verbose_name = "Список покупок"
         verbose_name_plural = "Списки покупок"
         ordering = ["user"]
         constraints = [
             _models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_recipe_in_shopping_cart"
+                fields=["user", "recipe"], name="unique_user_recipe_in_shopping_cart"
             )
         ]

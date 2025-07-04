@@ -4,7 +4,8 @@
 from django.conf import settings as _settings
 from django.conf.urls.static import static as _serve_static
 from django.contrib import admin as _admin
-from django.urls import include as _inc, path as _route
+from django.urls import include as _inc
+from django.urls import path as _route
 
 # -------------------------------
 # Основные маршруты приложения

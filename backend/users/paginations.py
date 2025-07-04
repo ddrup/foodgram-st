@@ -5,11 +5,10 @@
 Использует параметр `limit` для задания размера страницы.
 """
 
-# Сторонние зависимости с псевдонимом
-from rest_framework.pagination import PageNumberPagination as _BasePaginator
-
 # Локальная константа для размера страницы из общих настроек
 from constants import DEFAULT_PAGE_SIZE as _DEFAULT_SIZE
+# Сторонние зависимости с псевдонимом
+from rest_framework.pagination import PageNumberPagination as _BasePaginator
 
 
 class UserPagination(_BasePaginator):

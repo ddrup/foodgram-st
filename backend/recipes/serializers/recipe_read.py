@@ -1,5 +1,6 @@
 from rest_framework import serializers as _ser
 from users.serializers import UserSerializer as _UserSer
+
 from ..fields import Base64ImageField as _ImgField
 from ..models import Recipe as _RecipeModel
 
@@ -10,6 +11,7 @@ class RecipeReadSerializer(_ser.ModelSerializer):
     • Включает автора, изображение и статус избранного/корзины;
     • Формирует список ингредиентов.
     """
+
     author = _UserSer(read_only=True)
     image = _ImgField()
     is_favorited = _ser.SerializerMethodField()
@@ -62,10 +64,12 @@ class RecipeReadSerializer(_ser.ModelSerializer):
         ingredients_list = []
         for rel in relations:
             ing = rel.ingredient
-            ingredients_list.append({
-                "id": ing.id,
-                "name": ing.name,
-                "measurement_unit": ing.measurement_unit,
-                "amount": rel.amount,
-            })
+            ingredients_list.append(
+                {
+                    "id": ing.id,
+                    "name": ing.name,
+                    "measurement_unit": ing.measurement_unit,
+                    "amount": rel.amount,
+                }
+            )
         return ingredients_list

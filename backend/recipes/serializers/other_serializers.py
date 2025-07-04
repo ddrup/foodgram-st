@@ -1,7 +1,8 @@
+from recipes.models import Recipe as _RecipeModel
 from rest_framework import serializers as _ser
 
-from ..models import Favorite as _FavModel, ShoppingCart as _CartModel
-from recipes.models import Recipe as _RecipeModel
+from ..models import Favorite as _FavModel
+from ..models import ShoppingCart as _CartModel
 
 
 class FavoriteSerializer(_ser.ModelSerializer):
@@ -9,6 +10,7 @@ class FavoriteSerializer(_ser.ModelSerializer):
     Сериализатор для модели Favorite:
     возвращает данные рецепта при добавлении в избранное.
     """
+
     class Meta:
         model = _FavModel
         fields = (
@@ -23,11 +25,7 @@ class FavoriteSerializer(_ser.ModelSerializer):
         """
         rec = inst.recipe
         req = self.context.get("request")
-        img_url = (
-            req.build_absolute_uri(rec.image.url)
-            if req
-            else rec.image.url
-        )
+        img_url = req.build_absolute_uri(rec.image.url) if req else rec.image.url
         return {
             "id": rec.id,
             "name": rec.name,
@@ -41,6 +39,7 @@ class ShoppingCartSerializer(_ser.ModelSerializer):
     Сериализатор для модели ShoppingCart:
     возвращает представление рецепта в корзине покупок.
     """
+
     class Meta:
         model = _CartModel
         fields = (

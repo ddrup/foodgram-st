@@ -17,6 +17,7 @@ class IngredientFilter(_df_filters.FilterSet):
     Фильтр ингредиентов по полю name с учётом регистра.
     Использует lookup_expr 'istartswith' для начала строки.
     """
+
     name = _df_filters.CharFilter(
         field_name="name",
         lookup_expr="istartswith",
@@ -25,5 +26,6 @@ class IngredientFilter(_df_filters.FilterSet):
 
     class Meta:
         """Метаданные фильтра: модель и доступные поля."""
+
         model = _Ing
         fields = ("name",)
