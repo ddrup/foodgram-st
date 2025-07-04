@@ -1,44 +1,59 @@
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
+from django.contrib import admin as _admin
+from django.contrib.auth.admin import UserAdmin as _BaseUserAdmin
 
 from .models import Subscription, User
 
 
-@admin.register(User)
-class UserAdmin(DefaultUserAdmin):
-    list_display = ("username", "email", "is_active", "is_staff")
-    search_fields = ("username", "email")
+@_admin.register(User)
+class UserAdmin(_BaseUserAdmin):
+    """
+    Админка модели User: отображает ключевые поля и поддерживает поиск.
+    """
+    # Колонки, отображаемые в списке пользователей
+    _cols = ("username", "email", "is_active", "is_staff")
+    list_display = _cols
 
-    fieldsets = (
+    # Поля для поиска
+    _search = ("username", "email")
+    search_fields = _search
+
+    # Группировка полей для отображения и редактирования
+    _fieldset_groups = (
         (None, {"fields": ("username", "email", "password")}),
         ("Personal info", {"fields": ("first_name", "last_name")}),
         (
             "Permissions",
-            {
-                "fields": (
-                    "is_active",
-                    "is_staff",
-                    "is_superuser",
-                    "groups",
-                    "user_permissions",
-                )
-            },
+            {"fields": (
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "groups",
+                "user_permissions",
+            )},
         ),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
+    fieldsets = _fieldset_groups
 
-    add_fieldsets = (
+    # Поля при создании нового пользователя в админке
+    _add_groups = (
         (
             None,
-            {
-                "classes": ("wide",),
-                "fields": ("username", "email", "password1", "password2"),
-            },
+            {"classes": ("wide",), "fields": ("username", "email", "password1", "password2")},
         ),
     )
+    add_fieldsets = _add_groups
 
 
-@admin.register(Subscription)
-class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "author")
-    search_fields = ("user__username", "author__username")
+@_admin.register(Subscription)
+class SubscriptionAdmin(_admin.ModelAdmin):
+    """
+    Админка для моделей Subscription: связь пользователя и автора.
+    """
+    # Список колонок для модели Subscription
+    _subs_list = ("id", "user", "author")
+    list_display = _subs_list
+
+    # Поля для поиска подписок
+    _subs_search = ("user__username", "author__username")
+    search_fields = _subs_search

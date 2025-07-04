@@ -1,58 +1,90 @@
-# Сторонние библиотеки
-from django.contrib import admin
+# admin.py
 
-# Локальные импорты
+# Django admin imported с псевдонимом
+from django.contrib import admin as _admin_pkg
+
+# Локальные модели с новыми алиасами
 from .models import (
-    Favorite,
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    ShoppingCart,
+    Ingredient as _Ingredient,
+    Recipe as _Recipe,
+    RecipeIngredient as _RecipeIngr,
+    Favorite as _Favorite,
+    ShoppingCart as _Cart,
 )
 
 
-class RecipeIngredientInline(admin.TabularInline):
-    model = RecipeIngredient
+class RecipeIngrInline(_admin_pkg.TabularInline):
+    """
+    Inline для управления ингредиентами в редакторе рецепта.
+    Позволяет добавить минимум одну связь.
+    """
+    model = _RecipeIngr
     extra = 1
     min_num = 1
 
 
-@admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "measurement_unit")
-    search_fields = ("name",)
-    ordering = ("name",)
+@_admin_pkg.register(_Ingredient)
+class IngredientAdmin(_admin_pkg.ModelAdmin):
+    """
+    Конфигурация админки Ingredient:
+    выводит список полей и поддерживает поиск по имени.
+    """
+    list_display = ('id', 'name', 'measurement_unit')
+    search_fields = ('name',)
+    ordering = ('name',)
 
 
-@admin.register(Recipe)
-class RecipeAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "author", "cooking_time", "favorites_count")
-    search_fields = ("name", "author__username")
-    inlines = [RecipeIngredientInline]
-
+@_admin_pkg.register(_Recipe)
+class RecipeAdmin(_admin_pkg.ModelAdmin):
+    """
+    Настройки админки Recipe:
+    • Отображает ключевые поля и счётчик избранного;
+    • Встраивает Inline для ингредиентов.
+    """
+    list_display = ('id', 'name', 'author', 'cooking_time', 'favorites_count')
+    search_fields = ('name', 'author__username')
+    inlines = [RecipeIngrInline]
     fieldsets = (
-        (None, {"fields": ("name", "author", "image", "text", "cooking_time")}),
+        (
+            None,
+            {'fields': ('name', 'author', 'image', 'text', 'cooking_time')},
+        ),
     )
 
     def favorites_count(self, obj):
-        return Favorite.objects.filter(recipe=obj).count()
+        """
+        Подсчитывает, сколько раз рецепт добавлен в избранное.
+        """
+        return _Favorite.objects.filter(recipe=obj).count()
 
-    favorites_count.short_description = "Добавлено в избранное"
-
-
-@admin.register(RecipeIngredient)
-class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "recipe", "ingredient", "amount")
-    search_fields = ("recipe__name", "ingredient__name")
+    favorites_count.short_description = 'Добавлено в избранное'
 
 
-@admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "recipe")
-    search_fields = ("user__username", "recipe__name")
+@_admin_pkg.register(_RecipeIngr)
+class RecipeIngrAdmin(_admin_pkg.ModelAdmin):
+    """
+    Админка модели RecipeIngredient:
+    позволяет редактировать связи рецепта и ингредиента.
+    """
+    list_display = ('id', 'recipe', 'ingredient', 'amount')
+    search_fields = ('recipe__name', 'ingredient__name')
 
 
-@admin.register(ShoppingCart)
-class ShoppingCartAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "recipe")
-    search_fields = ("user__username", "recipe__name")
+@_admin_pkg.register(_Favorite)
+class FavoriteAdmin(_admin_pkg.ModelAdmin):
+    """
+    Административный интерфейс для избранного:
+    связь пользователь–рецепт.
+    """
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+
+
+@_admin_pkg.register(_Cart)
+class ShoppingCartAdmin(_admin_pkg.ModelAdmin):
+    """
+    Админка для корзины покупок:
+    связь пользователь–рецепт.
+    """
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')

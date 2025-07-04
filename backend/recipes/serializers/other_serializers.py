@@ -1,45 +1,67 @@
-# Сторонние библиотеки
-from rest_framework import serializers
+from rest_framework import serializers as _ser
 
-# Наши (локальные) импорты
-from ..models import Favorite, ShoppingCart
+from ..models import Favorite as _FavModel, ShoppingCart as _CartModel
+from recipes.models import Recipe as _RecipeModel
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
+class FavoriteSerializer(_ser.ModelSerializer):
+    """
+    Сериализатор для модели Favorite:
+    возвращает данные рецепта при добавлении в избранное.
+    """
     class Meta:
-        model = Favorite
-        fields = ["user", "recipe"]
+        model = _FavModel
+        fields = (
+            "user",
+            "recipe",
+        )
 
-    def to_representation(self, instance):
-        recipe = instance.recipe
-        request = self.context.get("request")
+    def to_representation(self, inst):
+        """
+        Преобразует связь Favorite в данные рецепта:
+        id, name, ссылка на изображение и время готовки.
+        """
+        rec = inst.recipe
+        req = self.context.get("request")
+        img_url = (
+            req.build_absolute_uri(rec.image.url)
+            if req
+            else rec.image.url
+        )
         return {
-            "id": recipe.id,
-            "name": recipe.name,
-            "image": (
-                request.build_absolute_uri(recipe.image.url)
-                if request
-                else recipe.image.url
-            ),
-            "cooking_time": recipe.cooking_time,
+            "id": rec.id,
+            "name": rec.name,
+            "image": img_url,
+            "cooking_time": rec.cooking_time,
         }
 
 
-class ShoppingCartSerializer(serializers.ModelSerializer):
+class ShoppingCartSerializer(_ser.ModelSerializer):
+    """
+    Сериализатор для модели ShoppingCart:
+    возвращает представление рецепта в корзине покупок.
+    """
     class Meta:
-        model = ShoppingCart
-        fields = ["user", "recipe"]
+        model = _CartModel
+        fields = (
+            "user",
+            "recipe",
+        )
 
-    def to_representation(self, instance):
-        recipe = instance.recipe
-        request = self.context.get("request")
+    def to_representation(self, inst):
+        """
+        Возвращает словарь с ключами: id, name, image и cooking_time рецепта.
+        """
+        rec_item = inst.recipe
+        req_ctx = self.context.get("request")
+        url = (
+            req_ctx.build_absolute_uri(rec_item.image.url)
+            if req_ctx
+            else rec_item.image.url
+        )
         return {
-            "id": recipe.id,
-            "name": recipe.name,
-            "image": (
-                request.build_absolute_uri(recipe.image.url)
-                if request
-                else recipe.image.url
-            ),
-            "cooking_time": recipe.cooking_time,
+            "id": rec_item.id,
+            "name": rec_item.name,
+            "image": url,
+            "cooking_time": rec_item.cooking_time,
         }

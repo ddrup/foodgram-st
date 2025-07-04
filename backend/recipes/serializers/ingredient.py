@@ -1,10 +1,17 @@
-from rest_framework import serializers
+from ..models import Ingredient as _Ingredient
+from rest_framework import serializers as _serializers
 
-from ..models import Ingredient
-
-
-class IngredientSerializer(serializers.ModelSerializer):
-
+class IngredientSerializer(_serializers.ModelSerializer):
+    """
+    Сериализатор модели Ingredient:
+    возвращает поля id, name и measurement_unit.
+    """
     class Meta:
-        model = Ingredient
-        fields = ["id", "name", "measurement_unit"]
+        model = _Ingredient
+        fields = (
+            "id",
+            "name",
+            "measurement_unit",
+        )
+
+    # Дополнительные методы сериализатора можно разместить здесь

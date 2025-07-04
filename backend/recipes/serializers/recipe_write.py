@@ -1,113 +1,122 @@
-# Сторонние библиотеки
-from django.db import transaction
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from django.db import transaction as _transaction
+from rest_framework import serializers as _serializers
+from rest_framework.exceptions import ValidationError as _ValErr
 
-# Наши (локальные) импорты
-from constants import MIN_COOKING_TIME
-
-from ..fields import Base64ImageField
-from ..models import Ingredient, Recipe, RecipeIngredient
+from constants import MIN_COOKING_TIME as _MIN_TIME
+from ..fields import Base64ImageField as _ImgField
+from ..models import Ingredient as _Ingredient, Recipe as _Recipe, RecipeIngredient as _RecIng
 
 
-class IngredientInRecipeSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(min_value=1)
+class IngredientInRecipeSerializer(_serializers.Serializer):
+    """
+    Вложенный сериализатор для ингредиента в рецепте:
+    принимает id и amount.
+    """
+    id = _serializers.IntegerField()
+    amount = _serializers.IntegerField(min_value=1)
 
 
-class RecipeWriteSerializer(serializers.ModelSerializer):
-    image = Base64ImageField()
+class RecipeWriteSerializer(_serializers.ModelSerializer):
+    """
+    Сериализатор записи рецепта:
+    обрабатывает изображение в Base64, поля ингредиентов и валидацию.
+    """
+    image = _ImgField()
     ingredients = IngredientInRecipeSerializer(many=True)
 
     class Meta:
-        model = Recipe
-        fields = ("id", "name", "image", "text", "cooking_time", "ingredients")
-
-    def validate(self, attrs):
-        request = self.context.get("request")
-        if request and request.method in ("PUT", "PATCH"):
-            if (
-                "ingredients" in self.initial_data
-                and not self.initial_data["ingredients"]
-            ):
-                raise ValidationError(
-                    {
-                        "ingredients": (
-                            "Поле 'ingredients' обязательно " "при обновлении."
-                        )
-                    }
-                )
-        return attrs
+        model = _Recipe
+        fields = (
+            "id",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
+            "ingredients",
+        )
 
     def validate_cooking_time(self, value):
-        if value < MIN_COOKING_TIME:
-            raise ValidationError(f"Время готовки минимум {MIN_COOKING_TIME} минут.")
+        """
+        Проверяет минимальное время готовки (_MIN_TIME).
+        """
+        if value < _MIN_TIME:
+            raise _ValErr(f"Время готовки минимум {_MIN_TIME} минут.")
         return value
 
-    def validate_image(self, value):
-        if not value:
-            raise ValidationError({"image": "Поле 'image' не может быть пустым."})
-        return value
+    def validate_ingredients(self, items):
+        """
+        Валидация поля ingredients:
+        - не пустой список;
+        - уникальность id;
+        - существование ингредиента в БД.
+        """
+        if not items:
+            raise _ValErr({"ingredients": "Поле 'ingredients' не может быть пустым."})
 
-    def validate_ingredients(self, value):
-        if not value:
-            raise ValidationError(
-                {"ingredients": "Поле 'ingredients' не может быть пустым."}
-            )
+        seen_ids = set()
+        for element in items:
+            idx = element.get("id")
+            if not _Ingredient.objects.filter(id=idx).exists():
+                raise _ValErr({"ingredients": f"Ингредиент с id {idx} не существует."})
+            if idx in seen_ids:
+                raise _ValErr({"ingredients": f"Ингредиент с id {idx} указан несколько раз."})
+            seen_ids.add(idx)
+        return items
 
-        unique_ingredient_ids = set()
-        for item in value:
-            ingredient_id = item["id"]
+    def validate(self, attrs):
+        """
+        Проверка при обновлении: ingredients не должны быть пустыми.
+        """
+        req = self.context.get("request")
+        if req and req.method in ("PUT", "PATCH"):
+            raw = self.initial_data.get("ingredients", None)
+            if raw is not None and not raw:
+                raise _ValErr({"ingredients": "Поле 'ingredients' обязательно при обновлении."})
+        return attrs
 
-            if not Ingredient.objects.filter(id=ingredient_id).exists():
-                raise ValidationError(
-                    {"ingredients": (f"Ингредиент с id {ingredient_id} не существует.")}
-                )
-
-            if ingredient_id in unique_ingredient_ids:
-                raise ValidationError(
-                    {
-                        "ingredients": (
-                            f"Ингредиент с id {ingredient_id} " "указан несколько раз."
-                        )
-                    }
-                )
-
-            unique_ingredient_ids.add(ingredient_id)
-
-        return value
-
-    @transaction.atomic
+    @_transaction.atomic
     def create(self, validated_data):
-        ingredients_data = validated_data.pop("ingredients")
-        recipe = Recipe.objects.create(
-            author=self.context["request"].user, **validated_data
+        """
+        Создание рецепта и сохранение ингредиентов.
+        """
+        ing_list = validated_data.pop("ingredients")
+        recipe = _Recipe.objects.create(
+            author=self.context["request"].user,
+            **validated_data
         )
-        self._save_ingredients(recipe, ingredients_data)
+        self._save_ings(recipe, ing_list)
         return recipe
 
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        ingredients_data = validated_data.pop("ingredients", None)
-        recipe = super().update(instance, validated_data)
-        if ingredients_data:
-            recipe.recipeingredient_set.all().delete()
-            self._save_ingredients(recipe, ingredients_data)
-
-        return recipe
-
-    def _save_ingredients(self, recipe, ingredients_data):
-        recipeingredient_list = [
-            RecipeIngredient(
-                recipe=recipe,
-                ingredient=Ingredient.objects.get(id=item["id"]),
-                amount=item["amount"],
+    def _save_ings(self, recipe_obj, ing_list):
+        """
+        Вспомогательный метод для сохранения связей RecipeIngredient.
+        """
+        relations = []
+        for data in ing_list:
+            relations.append(
+                _RecIng(
+                    recipe=recipe_obj,
+                    ingredient=_Ingredient.objects.get(id=data["id"]),
+                    amount=data["amount"],
+                )
             )
-            for item in ingredients_data
-        ]
-        RecipeIngredient.objects.bulk_create(recipeingredient_list)
+        _RecIng.objects.bulk_create(relations)
+
+    @_transaction.atomic
+    def update(self, instance, validated_data):
+        """
+        Обновление рецепта: удаление старых ингредиентов и добавление новых.
+        """
+        ing_list = validated_data.pop("ingredients", None)
+        recipe = super().update(instance, validated_data)
+        if ing_list:
+            recipe.recipeingredient_set.all().delete()
+            self._save_ings(recipe, ing_list)
+        return recipe
 
     def to_representation(self, instance):
+        """
+        Возвращает данные через RecipeReadSerializer после записи.
+        """
         from .recipe_read import RecipeReadSerializer
-
         return RecipeReadSerializer(instance, context=self.context).data
